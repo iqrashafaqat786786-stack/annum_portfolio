@@ -515,6 +515,87 @@ footer{
 /* masked word spans for GSAP text reveals */
 .w{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.12em;margin-bottom:-.12em}
 .wi{display:inline-block}
+
+/* ============ CSS MOTION LAYER ============
+   Everything below is pure CSS and animates ONLY transform/opacity, so it runs on
+   the compositor and costs no JavaScript. This is what gives phones their motion
+   now that GSAP is desktop-only. Elements GSAP controls on desktop have `.reveal`
+   stripped from them, so these rules simply don't apply there — no conflict. */
+
+/* richer scroll reveals, reusing the existing IntersectionObserver */
+.reveal{transition:opacity .7s var(--ease),transform .7s var(--ease)}
+/* timeline entries alternate in from opposite sides */
+.tl-item.reveal{transform:translate3d(-30px,14px,0)}
+.tl-item.reveal:nth-child(even){transform:translate3d(30px,14px,0)}
+/* cards pop with a little overshoot */
+.stat-card.reveal,.cert-card.reveal{
+  transform:translate3d(0,32px,0) scale(.93);
+  /* timing-function/duration only — overriding `transition` wholesale would wipe
+     the per-card transition-delay that creates the stagger */
+  transition-timing-function:cubic-bezier(.34,1.56,.64,1);
+  transition-duration:.6s;
+}
+.work-card.reveal{transform:translate3d(0,44px,0) scale(.97)}
+.about-card.reveal{transform:translate3d(34px,0,0)}
+.contact-link.reveal{transform:translate3d(-26px,0,0)}
+.video-wrap.reveal{transform:translate3d(0,40px,0) scale(.96)}
+.tl-item.reveal.in,.stat-card.reveal.in,.cert-card.reveal.in,.work-card.reveal.in,
+.about-card.reveal.in,.contact-link.reveal.in,.video-wrap.reveal.in{transform:none}
+
+/* skill cards cascade in (they have no .reveal class, so animate on load) */
+.skill-card{animation:cardIn .65s var(--ease) backwards}
+.skill-card:nth-child(1){animation-delay:.02s}
+.skill-card:nth-child(2){animation-delay:.08s}
+.skill-card:nth-child(3){animation-delay:.14s}
+.skill-card:nth-child(4){animation-delay:.20s}
+.skill-card:nth-child(5){animation-delay:.26s}
+.skill-card:nth-child(6){animation-delay:.32s}
+@keyframes cardIn{from{opacity:0;transform:translate3d(0,26px,0)}}
+
+/* the hero introduces itself in sequence (mobile — desktop has the GSAP version) */
+@media(max-width:820px){
+  .hero-badge,.hero h1,.typing-line,.hero-sub,.hero-ctas,.hero-meta,.hero-visual{
+    animation:heroIn .8s var(--ease) backwards;
+  }
+  .hero-badge{animation-delay:.05s}
+  .hero h1{animation-delay:.14s}
+  .typing-line{animation-delay:.24s}
+  .hero-sub{animation-delay:.34s}
+  .hero-ctas{animation-delay:.44s}
+  .hero-meta{animation-delay:.54s}
+  .hero-visual{animation:heroPop .95s var(--ease) .3s backwards}
+  /* the aurora drifts so the hero isn't static */
+  .hero-aurora{animation:auroraDrift 16s ease-in-out infinite}
+  /* stat chips settle in under the portrait */
+  .float-chip{animation:heroIn .7s var(--ease) backwards}
+  .float-chip.chip-a{animation-delay:.62s}
+  .float-chip.chip-b{animation-delay:.72s}
+}
+@keyframes heroIn{from{opacity:0;transform:translate3d(0,26px,0)}}
+@keyframes heroPop{from{opacity:0;transform:translate3d(0,30px,0) scale(.94)}}
+@keyframes auroraDrift{
+  0%,100%{transform:translate3d(0,0,0) scale(1)}
+  50%{transform:translate3d(-4%,2%,0) scale(1.08)}
+}
+
+/* the glow behind the portrait breathes (opacity+transform only) */
+.portrait-blob{animation:blobBreathe 9s ease-in-out infinite}
+@keyframes blobBreathe{
+  0%,100%{opacity:.26;transform:scale(1)}
+  50%{opacity:.4;transform:scale(1.07)}
+}
+
+/* buttons and cards get tactile press feedback on touch */
+.btn:active{transform:scale(.97)}
+.skill-card:active,.work-card:active,.cert-card:active,.contact-link:active{transform:scale(.985)}
+.m-item:active{transform:scale(.97)}
+.btn{transition:transform .18s var(--ease),box-shadow .3s,border-color .3s,background .3s}
+.m-item{transition:transform .18s var(--ease),box-shadow .3s,border-color .3s}
+
+@media(prefers-reduced-motion:reduce){
+  .skill-card,.hero-badge,.hero h1,.typing-line,.hero-sub,.hero-ctas,.hero-meta,
+  .hero-visual,.hero-aurora,.portrait-blob,.float-chip{animation:none !important}
+}
 /* ============ RESPONSIVE ============ */
 @media(max-width:960px){
   .about-wrap{grid-template-columns:1fr;gap:34px}
@@ -982,12 +1063,32 @@ const revealObs = new IntersectionObserver(es => {
 function observeReveals(){ document.querySelectorAll(".reveal:not(.in)").forEach(el => revealObs.observe(el)); }
 observeReveals();
 
-/* SAFETY NET — `.reveal` starts at opacity 0, so if IntersectionObserver never fires
+/* SAFETY NET 1 — `.reveal` starts at opacity 0, so if IntersectionObserver never fires
    (in-app browsers, aggressive throttling, background tabs) the whole page below the
    fold would stay blank. If nothing has fired after 2.5s, just show everything. */
 setTimeout(() => {
   if(!revealFired) document.querySelectorAll(".reveal").forEach(el => el.classList.add("in"));
 }, 2500);
+
+/* SAFETY NET 2 — catch-up sweep. Fast scrolling (or a flaky observer) can skip past
+   an element without it ever registering as intersecting, leaving it invisible inside
+   the viewport. On each scroll frame, reveal anything that has reached the fold. The
+   listener removes itself once everything is shown, so it costs nothing afterwards. */
+let sweepQueued = false;
+function revealSweep(){
+  sweepQueued = false;
+  const pending = document.querySelectorAll(".reveal:not(.in)");
+  if(!pending.length){ removeEventListener("scroll", onScrollSweep); return; }
+  pending.forEach(el => {
+    if(el.getBoundingClientRect().top < innerHeight) el.classList.add("in");
+  });
+}
+function onScrollSweep(){
+  if(sweepQueued) return;
+  sweepQueued = true;
+  requestAnimationFrame(revealSweep);
+}
+addEventListener("scroll", onScrollSweep, {passive:true});
 
 /* ---------- counters ---------- */
 let counterFired = false;
