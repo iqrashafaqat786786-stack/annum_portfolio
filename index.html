@@ -27,6 +27,12 @@
      fallbacks below fix both. -->
 <link rel="preload" href="assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<!-- desktop-only animation libraries: fetched early, alongside everything else (phones
+     never match this media query, so they still download nothing). The loader at the end
+     of <body> injects them later and reuses these responses. -->
+<link rel="preload" href="assets/gsap.min.js" as="script" media="(min-width: 821px) and (pointer: fine) and (prefers-reduced-motion: no-preference)">
+<link rel="preload" href="assets/ScrollTrigger.min.js" as="script" media="(min-width: 821px) and (pointer: fine) and (prefers-reduced-motion: no-preference)">
+<link rel="preload" href="assets/three.min.js" as="script" media="(min-width: 821px) and (pointer: fine) and (prefers-reduced-motion: no-preference)">
 <style>
 @font-face{font-family:"Sora";font-style:normal;font-weight:600 800;font-display:swap;src:url(assets/fonts/sora-latin.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
 @font-face{font-family:"Sora";font-style:normal;font-weight:600 800;font-display:swap;src:url(assets/fonts/sora-latin-ext.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
@@ -1601,7 +1607,9 @@ document.getElementById("year").textContent = new Date().getFullYear();
    were left permanently invisible. Mobile now uses the CSS `.reveal` fade system,
    which can never hide content, and skips downloading GSAP entirely (113 KB). */
 window.initMotion = function(){
+if(window.__motionInit) return; /* never build the motion layer twice (see loader retry) */
 if(window.gsap && window.ScrollTrigger && !reduceMotion && !isMobile){
+  window.__motionInit = true;
   gsap.registerPlugin(ScrollTrigger);
   function splitWords(el){
     const frag = document.createDocumentFragment();
@@ -1745,20 +1753,33 @@ if(window.gsap) window.initMotion();
 (function(){
   if(matchMedia("(max-width: 820px), (pointer: coarse)").matches) return;
   if(matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  function inject(src, done){
+  /* Watchdog: on the live CDN these late script requests were seen to hang indefinitely
+     (never erroring, never finishing) while every other asset loaded, leaving desktop
+     visitors with no 3D or motion. If a file hasn't arrived in 8s, request it again with a
+     cache-busting query — up to two retries. A stalled original that arrives late is
+     ignored; `once` makes sure each init still runs exactly one time. */
+  function inject(src, done, attempt){
+    attempt = attempt || 0;
+    var settled = false, watch;
+    var retry = function(){ if(settled) return; settled = true; clearTimeout(watch); if(attempt < 2) inject(src, done, attempt + 1); };
     var s = document.createElement("script");
-    s.src = src; s.onload = done; document.body.appendChild(s);
+    s.src = attempt ? src + "?retry=" + attempt : src;
+    s.onload = function(){ if(settled) return; settled = true; clearTimeout(watch); done(); };
+    s.onerror = retry;
+    watch = setTimeout(retry, 8000);
+    document.body.appendChild(s);
   }
+  function once(fn){ var ran = false; return function(){ if(!ran){ ran = true; fn(); } }; }
   function load(){
     /* motion graphics first — it's what the user sees soonest */
-    inject("assets/gsap.min.js", function(){
-      inject("assets/ScrollTrigger.min.js", function(){
+    inject("assets/gsap.min.js", once(function(){
+      inject("assets/ScrollTrigger.min.js", once(function(){
         if(window.initMotion) window.initMotion();
-      });
-    });
-    inject("assets/three.min.js", function(){
+      }));
+    }));
+    inject("assets/three.min.js", once(function(){
       if(window.initHero3D) window.initHero3D();
-    });
+    }));
   }
   if("requestIdleCallback" in window) requestIdleCallback(load, {timeout:1500});
   else setTimeout(load, 300);
