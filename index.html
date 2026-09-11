@@ -21,11 +21,24 @@
 <meta name="twitter:title" content="Annum Shahid — Growth-Focused Digital Marketing Head">
 <meta name="twitter:description" content="17+ years driving measurable growth across e-commerce, telecom, outsourcing and social impact.">
 <meta name="twitter:image" content="https://annum-shahid.vercel.app/assets/annum-hero.jpg">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap">
-<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap"></noscript>
+<!-- Fonts are self-hosted (OFL). Google Fonts' CSS was the slowest request on the page
+     (1.7-3.2s), and its late arrival swapped the headline font after first paint, shifting
+     the vertically-centred hero (desktop CLS 0.149). Same-origin + preload + metric-matched
+     fallbacks below fix both. -->
+<link rel="preload" href="assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
 <style>
+@font-face{font-family:"Sora";font-style:normal;font-weight:600 800;font-display:swap;src:url(assets/fonts/sora-latin.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Sora";font-style:normal;font-weight:600 800;font-display:swap;src:url(assets/fonts/sora-latin-ext.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Inter";font-style:normal;font-weight:400 700;font-display:swap;src:url(assets/fonts/inter-latin.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Inter";font-style:normal;font-weight:400 700;font-display:swap;src:url(assets/fonts/inter-latin-ext.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+/* metric-matched fallbacks (generated with @capsizecss/core): until Sora/Inter arrive, the
+   local Arial (desktop/iOS) or Roboto (Android) is scaled to the same width and line box,
+   so the swap doesn't reflow the page */
+@font-face{font-family:"Sora Fallback: Arial";src:local("Arial"),local("ArialMT");ascent-override:85.2913%;descent-override:25.4995%;line-gap-override:0%;size-adjust:113.7279%}
+@font-face{font-family:"Sora Fallback: Roboto";src:local("Roboto Regular"),local("Roboto-Regular");ascent-override:85.1044%;descent-override:25.4436%;line-gap-override:0%;size-adjust:113.9776%}
+@font-face{font-family:"Inter Fallback: Arial";src:local("Arial"),local("ArialMT");ascent-override:90.4365%;descent-override:22.518%;line-gap-override:0%;size-adjust:107.1194%}
+@font-face{font-family:"Inter Fallback: Roboto";src:local("Roboto Regular"),local("Roboto-Regular");ascent-override:90.2384%;descent-override:22.4686%;line-gap-override:0%;size-adjust:107.3546%}
 :root{
   --bg:#05070f;
   --bg-2:#0a101f;
@@ -43,8 +56,8 @@
   --grad-soft:linear-gradient(120deg,rgba(59,130,246,.16),rgba(139,92,246,.16));
   --shadow:0 20px 50px -20px rgba(0,0,0,.7);
   --radius:20px;
-  --font-head:"Sora",-apple-system,"Segoe UI",system-ui,sans-serif;
-  --font-body:"Inter",-apple-system,"Segoe UI",system-ui,sans-serif;
+  --font-head:"Sora","Sora Fallback: Arial","Sora Fallback: Roboto",Arial,Roboto,sans-serif;
+  --font-body:"Inter","Inter Fallback: Arial","Inter Fallback: Roboto",Arial,Roboto,sans-serif;
   --ease:cubic-bezier(.22,1,.36,1);
 }
 *{margin:0;padding:0;box-sizing:border-box}
@@ -713,7 +726,7 @@ footer{
         <div class="portrait-blob" aria-hidden="true"></div>
         <div class="portrait-frame">
           <div class="pf-inner">
-            <img src="assets/annum-hero.jpg" alt="Annum Shahid — Growth-Focused Digital Marketing Head" width="900" height="900" fetchpriority="high">
+            <img src="assets/annum-hero.jpg" srcset="assets/annum-hero-600.jpg 600w, assets/annum-hero.jpg 900w" sizes="(max-width: 960px) 330px, 400px" alt="Annum Shahid — Growth-Focused Digital Marketing Head" width="900" height="900" fetchpriority="high">
             <div class="portrait-sheen" aria-hidden="true"></div>
           </div>
         </div>
@@ -749,7 +762,7 @@ footer{
         </div>
       </div>
       <div class="about-card glass reveal" data-delay="2">
-        <img class="about-photo" src="assets/annum-avatar.jpg" alt="Annum Shahid" width="480" height="480" loading="lazy">
+        <img class="about-photo" src="assets/annum-avatar.jpg" alt="Annum Shahid" width="280" height="280" loading="lazy">
         <h3>Annum Shahid</h3>
         <div class="role">Growth-Focused Digital Marketing Head</div>
         <ul>
