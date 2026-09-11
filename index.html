@@ -775,7 +775,11 @@ footer{
     <div class="video-wrap reveal" data-delay="2">
       <div class="video-frame">
         <div class="video-glow"></div>
-        <video src="assets/annum-video.mp4?v=20260911" title="Annum Shahid — Video Portfolio" controls preload="metadata" playsinline></video>
+        <!-- preload="none": with "metadata", Chrome opens a range=bytes=0- stream for the whole
+             18.5 MB file on page load. On a slow link that stream starved the desktop GSAP/Three.js
+             downloads (they never finished) and held the load event open. The poster stands in
+             until the visitor presses play. -->
+        <video src="assets/annum-video.mp4?v=20260911" poster="assets/annum-video-poster.jpg" title="Annum Shahid — Video Portfolio" controls preload="none" playsinline></video>
       </div>
     </div>
   </div>
